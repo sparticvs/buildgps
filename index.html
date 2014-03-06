@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>BuildGPS</title>
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/bootstrap-theme.min.css">
+        <style>
+            body { 
+                padding-top: 65px; 
+            }
+            .container {
+                width: 1500px;
+            }
+            .dl-horizontal dt {
+                width: 100px;
+            }
+            .dl-horizontal dd {
+                margin-left: 120px;
+            }
+            .dl-horizontal {
+                margin-bottom: 0px;
+            }
+        </style>
+    </head>
+    <body>
+        <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+            <div class="container">
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="#">BuildGPS</a>
+                </div>
+            </div>
+        </nav>
+        <div id="projects" class="container" role="main">
+            <div class="page-header">
+                <h2>Projects</h2>
+            </div>
+        </div>
+        <div class="container">
+            <div id="history">
+                <div class="page-header">
+                    <h2>History</h2>
+                </div>
+                <table class="table table-condensed">
+                    <tbody>
+                        <tr class="info">
+                            <td style="width: 15%"></td>
+                            <td>Paged Loaded and Ready to Listen</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Here for Page Loading Speed -->
+        <script src="js/jquery-2.1.0.min.js"></script>
+        <script src="js/bootstrap.min.js"></script>
+        <script src="js/config.js"></script>
+        <script type="text/javascript">
+            <!--
+            var ws = new WebSocket(JENKINS_WS);
+            ws.onmessage = function(msg) {
+                console.debug(msg.data);
+                var obj = $.parseJSON(msg.data);
+                var entry = 'Unknown Message Was Received';
+                var color = 'info';
+                var projId = "#"+obj['project'];
+
+                if($(projId).length == 0) {
+                    var rowNdx = $("#projects .row").length;
+                    if(rowNdx == 0 || $("#projects #row-"+rowNdx+" .col-sm-3").length == 4) {
+                        rowNdx++;
+                        $("#projects").append('<div class="row" id="row-'+rowNdx+'"></div>');
+                    }
+                    // Need to insert a new panel!
+                    $("#projects #row-"+rowNdx).append('<div class="col-sm-3"><div class="panel panel-default" id="'+obj['project']+'"><div class="panel-heading"><h3 class="panel-title">'+obj['project']+'<span class="pull-right glyphicon"></span></h3></div><div class="panel-body">Please Wait</div></div></div>');
+                }
+
+                $(projId+" .panel-body").html(''+
+                            '<dl class="dl-horizontal">'+
+                            '    <dt>Commit ID</dt>'+
+                            '    <dd>0123456789abcdef</dd>'+
+                            '    <dt>Last Build</dt>'+
+                            '    <dd>'+(new Date()).toLocaleString()+'</dd>'+
+                            '    <dt>Blame</dt>'+
+                            '    <dd>jdoe</dd>'+
+                            '</dl>');
+
+                if(obj['status'] == "START") {
+                    entry = 'Started to build "'+obj['project']+'"';
+                    color = 'warning';
+                    $(projId).removeClass("panel-primary panel-success panel-info panel-danger").addClass("panel-warning");
+                    $(projId+" .glyphicon").removeClass("glyphicon-ok glyphicon-ban-circle").addClass("glyphicon-refresh");
+                    $(projId+" .panel-body").html('<div class="progress progress-striped active" style="margin-bottom: 0px"><div class="progress-bar progress-bar-warning" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%"></div></div>');
+                
+                } else if (obj['status'] == "SUCCESS") {
+                    entry = 'Build of "'+obj['project']+'" completed successfully!';
+                    color = 'success';
+                    $(projId).removeClass("panel-primary panel-warning panel-info panel-danger").addClass("panel-success");
+                    $(projId+" .glyphicon").removeClass("glyphicon-refresh glyphicon-ban-circle").addClass("glyphicon-ok");
+                } else if (obj['status'] == "FAILURE") {
+                    entry = 'Failed to build "'+obj['project']+'"';
+                    color = 'danger';
+                    $(projId).removeClass("panel-primary panel-success panel-info panel-warning").addClass("panel-danger");
+                    $(projId+" .glyphicon").removeClass("glyphicon-ok glyphicon-refresh").addClass("glyphicon-ban-circle");
+                }
+                $("#history table tbody tr:first").before('<tr class="'+color+'"><td>'+(new Date()).toLocaleString()+'</td><td>'+entry+'</td></tr>');
+            };
+            //-->
+        </script>
+    </body>
+</html>
