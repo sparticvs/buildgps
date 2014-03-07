@@ -9,7 +9,7 @@
                 padding-top: 65px; 
             }
             .container {
-                width: 1500px;
+                width: 100%;
             }
             .dl-horizontal dt {
                 width: 100px;
@@ -57,6 +57,10 @@
         <script src="js/config.js"></script>
         <script type="text/javascript">
             <!--
+            function insertNewRow(rowNum) {
+                $("#projects").append('<div class="row" id="row-'+rowNum+'"></div>');
+            }
+
             var ws = new WebSocket(JENKINS_WS);
             ws.onmessage = function(msg) {
                 console.debug(msg.data);
@@ -69,21 +73,21 @@
                     var rowNdx = $("#projects .row").length;
                     if(rowNdx == 0 || $("#projects #row-"+rowNdx+" .col-sm-3").length == 4) {
                         rowNdx++;
-                        $("#projects").append('<div class="row" id="row-'+rowNdx+'"></div>');
+                        insertNewRow(rowNdx);
                     }
-                    // Need to insert a new panel!
+
                     $("#projects #row-"+rowNdx).append('<div class="col-sm-3"><div class="panel panel-default" id="'+obj['project']+'"><div class="panel-heading"><h3 class="panel-title">'+obj['project']+'<span class="pull-right glyphicon"></span></h3></div><div class="panel-body">Please Wait</div></div></div>');
                 }
 
                 $(projId+" .panel-body").html(''+
-                            '<dl class="dl-horizontal">'+
-                            '    <dt>Commit ID</dt>'+
-                            '    <dd>0123456789abcdef</dd>'+
-                            '    <dt>Last Build</dt>'+
-                            '    <dd>'+(new Date()).toLocaleString()+'</dd>'+
-                            '    <dt>Blame</dt>'+
-                            '    <dd>jdoe</dd>'+
-                            '</dl>');
+                    '<dl class="dl-horizontal">'+
+                    '    <dt>Commit ID</dt>'+
+                    '    <dd>0123456789abcdef</dd>'+
+                    '    <dt>Last Build</dt>'+
+                    '    <dd>'+(new Date()).toLocaleString()+'</dd>'+
+                    '    <dt>Blame</dt>'+
+                    '    <dd>jdoe</dd>'+
+                    '</dl>');
 
                 if(obj['status'] == "START") {
                     entry = 'Started to build "'+obj['project']+'"';
