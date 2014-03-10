@@ -5,7 +5,7 @@ What is BuildGPS?
 -----------------
 
 BuildGPS is a tool that talks to Jenkins and GitLab (currently, maybe more interfaces later)
-to get current build status.  BuildGPS consists of two parts.  First is a Python Flask-based
+to get current build status.  BuildGPS consists of two parts.  First is a Python Tornado-based
 WebSocket Service that will talk to Jenkins and GitLab JSON APIs (because of Cross-Origin
 Resource Sharing) and feed information to the Second part of the project. The second is an
 extremely light HTML/Javascript Package that gets information back from the server and using
