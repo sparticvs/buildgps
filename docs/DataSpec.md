@@ -1,6 +1,7 @@
 # Data Specification
 
 **Author:** sparticvs
+
 **License:** Public Domain
 
 ## Summary
