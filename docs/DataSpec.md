@@ -34,6 +34,7 @@ should immediately report the following packet:
                     "status": "success",
                     "timestamp": "2014-03-10T19:45:46+0000",
                     "label": "#4123",
+                    "cause": "Build was started by SCM change"
                 },
                 "repo": {
                     "branch": "master",
@@ -48,6 +49,7 @@ should immediately report the following packet:
                     "status": "failure",
                     "timestamp": "2014-03-10T19:45:46+0000",
                     "label": "#1241",
+                    "cause": "Build was started by timer"
                 },
                 "repo": {
                     "branch": "experimental",
@@ -67,6 +69,7 @@ should immediately report the following packet:
     `project.build.status` - Current Build Status (Succes, Building, Failure)
     `project.build.timestamp` - Last Build Timestamp
     `project.build.label` - Label for the Build (Jenkins for instance does #<build number>)
+    `project.build.cause` - Cause for why the build was initiated (automated/manual message)
     `project.repo` - Object containing repository information
     `project.repo.branch` - Name of the Branch that was built
     `project.repo.commit` - Commit Identifier (should be a string)
