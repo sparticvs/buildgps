@@ -44,6 +44,7 @@
                     <tbody>
                         <tr class="info">
                             <td style="width: 15%"></td>
+                            <td style="width: 15%"></td>
                             <td>Paged Loaded and Ready to Listen</td>
                         </tr>
                     </tbody>
@@ -107,7 +108,7 @@
                     $(projId).removeClass("panel-primary panel-success panel-info panel-warning").addClass("panel-danger");
                     $(projId+" .glyphicon").removeClass("glyphicon-ok glyphicon-refresh").addClass("glyphicon-ban-circle");
                 }
-                $("#history table tbody tr:first").before('<tr class="'+color+'"><td>'+(new Date()).toLocaleString()+'</td><td>'+entry+'</td></tr>');
+                $("#history table tbody tr:first").before('<tr class="'+color+'"><td>'+(new Date()).toLocaleString()+'</td><td>'+obj['project']+'</td><td>'+entry+'</td></tr>');
             };
             //-->
         </script>
