@@ -109,6 +109,10 @@
                     $(projId+" .glyphicon").removeClass("glyphicon-ok glyphicon-refresh").addClass("glyphicon-ban-circle");
                 }
                 $("#history table tbody tr:first").before('<tr class="'+color+'"><td>'+(new Date()).toLocaleString()+'</td><td>'+obj['project']+'</td><td>'+entry+'</td></tr>');
+
+                if($("#history table tbody tr").length > 10) {
+                    $("#history table tbody tr:last").remove();
+                }
             };
             //-->
         </script>
