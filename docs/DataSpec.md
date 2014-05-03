@@ -27,7 +27,7 @@ Immediately after connecting to the WebSocket Daemon for a build system, the sys
 should immediately report the following packet:
 
     {
-        "project": [
+        "jobs": [
             {
                 "name": "foobar",
                 "build": {
