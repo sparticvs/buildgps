@@ -17,9 +17,7 @@ from gitlab import Gitlab
 from jenkinsapi.jenkins import Jenkins
 
 import json
-from threading import (Timer,
-                       Lock,
-                       Event)
+import threading
 from urlparse import urljoin
 from ConfigParser import ConfigParser
 from abc import abstractmethod
@@ -28,12 +26,12 @@ from abc import abstractmethod
 ## then when data is received, push to all sockets
 ## Need polling thread to get updates
 
-SOCKETS_LOCK = Lock()
+SOCKETS_LOCK = threading.Lock()
 SOCKETS = []
 
-WEBSOCK_DO_PUSH_EVENT = Event()
-BUILD_SYS_DO_POLL_EVENT = Event()
-SCM_DO_POLL_EVENT = Event()
+WEBSOCK_DO_PUSH_EVENT = threading.Event()
+BUILD_SYS_DO_POLL_EVENT = threading.Event()
+SCM_DO_POLL_EVENT = threading.Event()
 
 class StrictDict(dict):
     legal_keys = []
@@ -41,7 +39,7 @@ class StrictDict(dict):
     def __getitem__(self, key):
         if key not in self.legal_keys:
             raise SyntaxError("Key (%s) is illegal" % key)
-        elif key not in self._keys:
+        elif key not in self.keys():
             return None
         else:
             return dict.__getitem__(self, key)
@@ -199,24 +197,33 @@ class JenkinsRequestor(BuildSystemRequestor):
 
     def do_poll(self):
         """Poll Jenkins Server to get Project Information"""
-        while BUILD_SYS_DO_POLL_EVENT.wait():
-            BUILD_SYS_DO_POLL_EVENT.clear()
+        while True:
+        #while BUILD_SYS_DO_POLL_EVENT.wait():
+            #BUILD_SYS_DO_POLL_EVENT.clear()
 
             # Get a list of ALL Jobs on Jenkins
             for job_name in self.jenk_client.keys():
                 jobDetail = self.jenk_client[job_name]
                 lastBuild = jobDetail.get_last_build()
                 buildInfo = BuildItem()
-                buildInfo["status"] = lastBuild.get_status()
-                buildInfo["timestamp"] = lastBuild.get_timestamp()
+                if lastBuild.is_running():
+                    buildInfo["status"] = "STARTED"
+                else:
+                    buildInfo["status"] = lastBuild.get_status()
+                buildInfo["timestamp"] = lastBuild.get_timestamp().isoformat()
                 buildInfo["label"] = lastBuild.name
                 buildInfo["cause"] = "" # Need a clean way to retrieve this value
+
 
                 # TODO: swap GitLab specific library for Git Library
                 gl_client = Gitlab(self.options["gitlab"], self.options["gitlab_key"])
 
                 ### complete hack....
-                proj_url = jobDetail.get_scm_url()[0]
+                try:
+                    proj_url = jobDetail.get_scm_url()[0]
+                except Exception:
+                    continue
+
                 sep = proj_url.rfind("/")
                 start = proj_url.rfind("/", 0, sep-1)
                 proj_name = proj_url[start+1:]
@@ -248,7 +255,7 @@ class JenkinsRequestor(BuildSystemRequestor):
                 except IndexError:
                     PROJECTS.add(job_name, buildInfo, repoInfo)
 
-            SCM_DO_POLL_EVENT.set()
+            WEBSOCK_DO_PUSH_EVENT.set()
 
 def websock_do_push():
     """Thread to Push Data to bound sockets
@@ -260,7 +267,7 @@ def websock_do_push():
         WEBSOCK_DO_PUSH_EVENT.clear()
         data = { "jobs" : PROJECTS.get_projects() }
         je_data = json.dumps(data)
-        for sock in SOCKET:
+        for sock in SOCKETS:
             sock.write_message(je_data)
 
 
@@ -295,7 +302,10 @@ if __name__ == "__main__":
         handler = eval(sec.pop("handler"))
         uri = sec.pop("uri")
         inst = handler(uri, **sec)
-        inst.do_poll()
+        threading.Thread(target=inst.do_poll).start()
+        threading.Thread(target=websock_do_push).start()
+        #BUILD_SYS_DO_POLL_EVENT.set()
+        #inst.do_poll()
 
     APP.listen(8888)
     try:
