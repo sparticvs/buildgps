@@ -6,9 +6,9 @@
         <link rel="stylesheet" href="css/bootstrap-theme.min.css">
         <style>
             body { 
-                padding-top: 65px; 
+                padding-top: 20px; 
             }
-            .container {
+            .navbar-header,.container {
                 width: 100%;
             }
             .dl-horizontal dt {
@@ -27,18 +27,21 @@
             <div class="container">
                 <div class="navbar-header">
                     <a class="navbar-brand" href="#">BuildGPS</a>
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="javascript:showSettings();"><span class="glyphicon glyphicon-cog"></span></a></li>
+                    </ul>
                 </div>
             </div>
         </nav>
         <div id="projects" class="container" role="main">
             <div class="page-header">
-                <h2>Projects</h2>
+                <h3>Projects</h3>
             </div>
         </div>
         <div class="container">
             <div id="history">
                 <div class="page-header">
-                    <h2>History</h2>
+                    <h3>History</h3>
                 </div>
                 <table class="table table-condensed">
                     <tbody>
@@ -51,67 +54,142 @@
                 </table>
             </div>
         </div>
-
+        <div class="modal fade">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                        <h4 class="modal-title">BuildGPS Settings</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="panel panel-default">
+                                    <div class="panel-heading">Jobs to Display</div>
+                                    <div class="panel-body"> 
+                                        <div id="settings_jobList" class="list-group">
+                                            <a class="list-group-item" onclick="javascript:doSelect(this);">job-a</a>
+                                            <a class="list-group-item" onclick="javascript:doSelect(this);">job-b</a>
+                                            <a class="list-group-item" onclick="javascript:doSelect(this);">job-c</a>
+                                            <a class="list-group-item" onclick="javascript:doSelect(this);">job-d</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         <!-- Here for Page Loading Speed -->
         <script src="js/jquery-2.1.0.min.js"></script>
         <script src="js/bootstrap.min.js"></script>
         <script src="js/config.js"></script>
         <script type="text/javascript">
             <!--
+            jobList = [{name: "Alpha", active: false},
+                       {name: "Bravo", active: false},
+                       {name: "Charlie", active: false}];
+            jobListLock = false;
+
+            function obtainLock(lock) {
+                while(lock) {}
+                lock = true;
+            }
+
+            function releaseLock(lock) {
+                lock = false;
+            }
+
+            function populateJobListSettingsModal() {
+                $("#settings_jobList").empty();
+                obtainLock(jobListLock);
+                $.each(jobList, function(ndx) {
+                    job = jobList[ndx];
+                    console.log(job);
+                    $("#settings_jobList").append('<a id="'+job['name']+'" class="list-group-item" onclick="javascript:doSelect(this);">'+job['name']+'</a>');
+                    if(job['active']) {
+                        $("#"+job['name']).appendClass("active");
+                    }
+                });
+                releaseLock(jobListLock);
+            }
+
+            function doSelect(inst) {
+                $(inst).toggleClass("active");
+                localStorage.setItem("active", JSON.stringify({a: true, b: false}));
+            }
+
+            function showSettings() {
+                $("div.modal").modal();
+            }
+
             function insertNewRow(rowNum) {
                 $("#projects").append('<div class="row" id="row-'+rowNum+'"></div>');
             }
 
-            var ws = new WebSocket(JENKINS_WS);
+            function insertNewPanel(row, project) {
+                $("#projects #row-"+row).append('<div class="col-sm-3"><div class="panel panel-default" id="'+project+'"><div class="panel-heading"><h3 class="panel-title">'+project+'<span class="pull-right glyphicon"></span></h3></div><div class="panel-body">Please Wait</div></div></div>');
+            }
+
+            var ws = new WebSocket(BUILDGPS_WS);
             ws.onmessage = function(msg) {
                 console.debug(msg.data);
                 var obj = $.parseJSON(msg.data);
                 var entry = 'Unknown Message Was Received';
                 var color = 'info';
-                var projId = "#"+obj['project'];
 
-                if($(projId).length == 0) {
-                    var rowNdx = $("#projects .row").length;
-                    if(rowNdx == 0 || $("#projects #row-"+rowNdx+" .col-sm-3").length == 4) {
-                        rowNdx++;
-                        insertNewRow(rowNdx);
+                for (var ndx = 0; ndx < obj['jobs'].length; ndx++) {
+                    var job = obj['jobs'][ndx];                
+
+                    var projId = "#"+job['name'];
+
+                    if($(projId).length == 0) {
+                        var rowNdx = $("#projects .row").length;
+                        if(rowNdx == 0 || $("#projects #row-"+rowNdx+" .col-sm-3").length == 4) {
+                            rowNdx++;
+                            insertNewRow(rowNdx);
+                        }
+                        insertNewPanel(rowNdx, job['name']);
                     }
 
-                    $("#projects #row-"+rowNdx).append('<div class="col-sm-3"><div class="panel panel-default" id="'+obj['project']+'"><div class="panel-heading"><h3 class="panel-title">'+obj['project']+'<span class="pull-right glyphicon"></span></h3></div><div class="panel-body">Please Wait</div></div></div>');
-                }
+                    $(projId+" .panel-body").html(''+
+                        '<dl class="dl-horizontal">'+
+                        '    <dt>Commit ID</dt>'+
+                        '    <dd>'+job['repo']['commit'].substring(0,16)+'</dd>'+
+                        '    <dt>Last Build</dt>'+
+                        '    <dd>'+(new Date(job['build']['timestamp'])).toLocaleString()+'</dd>'+
+                        '    <dt>Blame</dt>'+
+                        '    <dd>'+job['repo']['blame']+'</dd>'+
+                        '</dl>');
 
-                $(projId+" .panel-body").html(''+
-                    '<dl class="dl-horizontal">'+
-                    '    <dt>Commit ID</dt>'+
-                    '    <dd>0123456789abcdef</dd>'+
-                    '    <dt>Last Build</dt>'+
-                    '    <dd>'+(new Date()).toLocaleString()+'</dd>'+
-                    '    <dt>Blame</dt>'+
-                    '    <dd>jdoe</dd>'+
-                    '</dl>');
+                    if(job['build']['status'] == "STARTED") {
+                        entry = 'Build has Started';
+                        color = 'warning';
+                        $(projId).removeClass("panel-primary panel-success panel-info panel-danger").addClass("panel-warning");
+                        $(projId+" .glyphicon").removeClass("glyphicon-ok glyphicon-ban-circle").addClass("glyphicon-refresh");
+                        $(projId+" .panel-body").html('<div class="progress progress-striped active" style="margin-bottom: 0px"><div class="progress-bar progress-bar-warning" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%"></div></div>');
+                    
+                    } else if (job['build']['status'] == "SUCCESS") {
+                        entry = 'Build has completed successfully';
+                        color = 'success';
+                        $(projId).removeClass("panel-primary panel-warning panel-info panel-danger").addClass("panel-success");
+                        $(projId+" .glyphicon").removeClass("glyphicon-refresh glyphicon-ban-circle").addClass("glyphicon-ok");
+                    } else if (job['build']['status'] == "FAILURE") {
+                        entry = 'Build has failed to complete';
+                        color = 'danger';
+                        $(projId).removeClass("panel-primary panel-success panel-info panel-warning").addClass("panel-danger");
+                        $(projId+" .glyphicon").removeClass("glyphicon-ok glyphicon-refresh").addClass("glyphicon-ban-circle");
+                    }
+                    $("#history table tbody tr:first").before('<tr class="'+color+'"><td>'+(new Date()).toLocaleString()+'</td><td>'+job['name']+'</td><td>'+entry+'</td></tr>');
 
-                if(obj['status'] == "START") {
-                    entry = 'Started to build "'+obj['project']+'"';
-                    color = 'warning';
-                    $(projId).removeClass("panel-primary panel-success panel-info panel-danger").addClass("panel-warning");
-                    $(projId+" .glyphicon").removeClass("glyphicon-ok glyphicon-ban-circle").addClass("glyphicon-refresh");
-                    $(projId+" .panel-body").html('<div class="progress progress-striped active" style="margin-bottom: 0px"><div class="progress-bar progress-bar-warning" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%"></div></div>');
-                
-                } else if (obj['status'] == "SUCCESS") {
-                    entry = 'Build of "'+obj['project']+'" completed successfully!';
-                    color = 'success';
-                    $(projId).removeClass("panel-primary panel-warning panel-info panel-danger").addClass("panel-success");
-                    $(projId+" .glyphicon").removeClass("glyphicon-refresh glyphicon-ban-circle").addClass("glyphicon-ok");
-                } else if (obj['status'] == "FAILURE") {
-                    entry = 'Failed to build "'+obj['project']+'"';
-                    color = 'danger';
-                    $(projId).removeClass("panel-primary panel-success panel-info panel-warning").addClass("panel-danger");
-                    $(projId+" .glyphicon").removeClass("glyphicon-ok glyphicon-refresh").addClass("glyphicon-ban-circle");
-                }
-                $("#history table tbody tr:first").before('<tr class="'+color+'"><td>'+(new Date()).toLocaleString()+'</td><td>'+obj['project']+'</td><td>'+entry+'</td></tr>');
-
-                if($("#history table tbody tr").length > 10) {
-                    $("#history table tbody tr:last").remove();
+                    if($("#history table tbody tr").length > 7) {
+                        $("#history table tbody tr:last").remove();
+                    }
                 }
             };
             //-->
