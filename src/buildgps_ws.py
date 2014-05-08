@@ -175,8 +175,7 @@ def jenkins_ws_callback(future):
             if msg is None:
                 break
             # Process Message that was received
-            obj = json.loads(msg)
-            print obj
+        WEBSOCK_DO_PUSH_EVENT.set()
     except WebSocketClosedError:
         pass
     finally:
@@ -204,7 +203,6 @@ class JenkinsRequestor(BuildSystemRequestor):
     def do_poll(self):
         """Poll Jenkins Server to get Project Information"""
         while True:
-
             # Get a list of ALL Jobs on Jenkins
             for job_name in self.jenk_client.keys():
                 jobDetail = self.jenk_client[job_name]
@@ -262,6 +260,12 @@ class JenkinsRequestor(BuildSystemRequestor):
 
             WEBSOCK_DO_PUSH_EVENT.set()
 
+
+def package_job_detail():
+    """Package the job details"""
+    data = { "jobs" : PROJECTS.get_projects() }
+    return json.dumps(data)
+
 def websock_do_push():
     """Thread to Push Data to bound sockets
 
@@ -270,16 +274,17 @@ def websock_do_push():
     while True:
         WEBSOCK_DO_PUSH_EVENT.wait()
         WEBSOCK_DO_PUSH_EVENT.clear()
-        data = { "jobs" : PROJECTS.get_projects() }
-        je_data = json.dumps(data)
+        packaged = package_job_detail()
         for sock in SOCKETS:
-            sock.write_message(je_data)
+            sock.write_message(packaged)
 
 
 class MainHandler(WebSocketHandler):
     """Primary WebSocket Request Handler"""
 
     def open(self):
+        packaged = package_job_detail()
+        self.write_message(packaged)
         with SOCKETS_LOCK:
             SOCKETS.append(self)
 
@@ -313,8 +318,6 @@ if __name__ == "__main__":
         thread = threading.Thread(target=inst.do_poll)
         thread.daemon = True
         thread.start()
-        #BUILD_SYS_DO_POLL_EVENT.set()
-        #inst.do_poll()
 
     APP.listen(8888)
     try:
