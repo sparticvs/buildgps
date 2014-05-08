@@ -189,7 +189,7 @@ PROJECTS = ProjectList()
 class JenkinsRequestor(BuildSystemRequestor):
     def initialize(self):
         """Initialize Jenkins Connections and Prepopulate Info"""
-        if "username" in self.options.keys() and
+        if "username" in self.options.keys() and \
             "password" in self.options.keys():
             self.jenk_client = Jenkins(self.uri,
                                        username=self.options.pop("username"),
@@ -303,6 +303,7 @@ if __name__ == "__main__":
     build = conf.get("buildgps", "build")
     build_list = build.split(',')
     
+    threading.Thread(target=websock_do_push).start()
     for ci_sys in build_list:
         sec = conf._sections["build_%s" % ci_sys]
         sec.pop("__name__")
@@ -310,7 +311,6 @@ if __name__ == "__main__":
         uri = sec.pop("uri")
         inst = handler(uri, **sec)
         threading.Thread(target=inst.do_poll).start()
-        threading.Thread(target=websock_do_push).start()
         #BUILD_SYS_DO_POLL_EVENT.set()
         #inst.do_poll()
 
