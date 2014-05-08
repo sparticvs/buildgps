@@ -303,14 +303,18 @@ if __name__ == "__main__":
     build = conf.get("buildgps", "build")
     build_list = build.split(',')
     
-    threading.Thread(target=websock_do_push).start()
+    ws_thread = threading.Thread(target=websock_do_push)
+    ws_thread.daemon = True
+    ws_thread.start()
     for ci_sys in build_list:
         sec = conf._sections["build_%s" % ci_sys]
         sec.pop("__name__")
         handler = eval(sec.pop("handler"))
         uri = sec.pop("uri")
         inst = handler(uri, **sec)
-        threading.Thread(target=inst.do_poll).start()
+        thread = threading.Thread(target=inst.do_poll)
+        thread.daemon = True
+        thread.start()
         #BUILD_SYS_DO_POLL_EVENT.set()
         #inst.do_poll()
 
