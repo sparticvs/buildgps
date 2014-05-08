@@ -204,8 +204,6 @@ class JenkinsRequestor(BuildSystemRequestor):
     def do_poll(self):
         """Poll Jenkins Server to get Project Information"""
         while True:
-        #while BUILD_SYS_DO_POLL_EVENT.wait():
-            #BUILD_SYS_DO_POLL_EVENT.clear()
 
             # Get a list of ALL Jobs on Jenkins
             for job_name in self.jenk_client.keys():
@@ -269,8 +267,8 @@ def websock_do_push():
 
         This is triggered by WEBSOCK_DO_PUSH_EVENT
     """
-    while WEBSOCK_DO_PUSH_EVENT.wait():
-        # Clean the event up, we are going to handle this
+    while True:
+        WEBSOCK_DO_PUSH_EVENT.wait()
         WEBSOCK_DO_PUSH_EVENT.clear()
         data = { "jobs" : PROJECTS.get_projects() }
         je_data = json.dumps(data)
