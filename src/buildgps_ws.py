@@ -217,6 +217,7 @@ class JenkinsRequestor(BuildSystemRequestor):
 
                 # TODO: swap GitLab specific library for Git Library
                 gl_client = Gitlab(self.options["gitlab"], self.options["gitlab_key"])
+                gl_client.auth()
 
                 ### complete hack....
                 try:
