@@ -189,7 +189,13 @@ PROJECTS = ProjectList()
 class JenkinsRequestor(BuildSystemRequestor):
     def initialize(self):
         """Initialize Jenkins Connections and Prepopulate Info"""
-        self.jenk_client = Jenkins(self.uri)
+        if "username" in self.options.keys() and
+            "password" in self.options.keys():
+            self.jenk_client = Jenkins(self.uri,
+                                       username=self.options.pop("username"),
+                                       password=self.options.pop("password"))
+        else:
+            self.jenk_client = Jenkins(self.uri)
 
         if "websocket" in self.options.keys():
             websocket_uri = self.options.pop("websocket")
