@@ -29,9 +29,23 @@ from abc import abstractmethod
 SOCKETS_LOCK = threading.Lock()
 SOCKETS = []
 
-WEBSOCK_DO_PUSH_EVENT = threading.Event()
+class EventTrigger(threading._Event):
+    def __init__(self):
+        self.options = None
+        super(EventTrigger, self).__init__()
+
+    def set(self, *args, **kwargs):
+        self.options = kwargs
+        super(EventTrigger, self).set()
+
+    def get(self):
+        return self.options
+
+
+WEBSOCK_DO_PUSH_EVENT = EventTrigger()
 BUILD_SYS_DO_POLL_EVENT = threading.Event()
 SCM_DO_POLL_EVENT = threading.Event()
+
 
 class StrictDict(dict):
     legal_keys = []
@@ -89,6 +103,7 @@ class ProjectList(object):
         if self.__get_project(name) is None:
             with self.proj_lock:
                 self.projects.append(new)
+            return new
         else:
             raise IndexError("Project Name Already Exists")
 
@@ -97,11 +112,17 @@ class ProjectList(object):
         if ndx is None:
             raise IndexError("Project Name Doesn't Exist")
         else:
-            with self.proj_lock:
-                if build is not None:
-                    self.projects[ndx]["build"] = build
-                if repo is not None:
-                    self.projects[ndx]["repo"] = repo
+            if self.projects[ndx]["build"]["timestamp"] == build["timestamp"] and \
+               self.projects[ndx]["repo"]["commit"] == repo["commit"] and \
+               self.projects[ndx]["build"]["status"] == build["status"]:
+                return None
+            else: 
+                with self.proj_lock:
+                    if build is not None:
+                        self.projects[ndx]["build"] = build
+                    if repo is not None:
+                        self.projects[ndx]["repo"] = repo
+                return self.projects[ndx]
 
     def remove(self, name):
         ndx = self.__get_project(name)
@@ -250,20 +271,26 @@ class JenkinsRequestor(BuildSystemRequestor):
                 repoInfo["timestamp"] = commit.created_at
 
                 ### TODO Refactor to "JobsList" from ProjectsList
+                pushJob = None
                 try:
                     ## We use this order, since it will be in an infinite
                     ## loop, the likely scenario is that we will just be
                     ## updating the status of jobs
-                    PROJECTS.update(job_name, buildInfo, repoInfo)
+                    pushJob = PROJECTS.update(job_name, buildInfo, repoInfo)
                 except IndexError:
-                    PROJECTS.add(job_name, buildInfo, repoInfo)
+                    pushJob = PROJECTS.add(job_name, buildInfo, repoInfo)
 
-            WEBSOCK_DO_PUSH_EVENT.set()
+                if pushJob is not None:
+                    WEBSOCK_DO_PUSH_EVENT.set(push=pushJob)
 
 
 def package_job_detail():
     """Package the job details"""
     data = { "jobs" : PROJECTS.get_projects() }
+    return json.dumps(data)
+
+def package_job(job):
+    data = { "jobs" : [ job ] }
     return json.dumps(data)
 
 def websock_do_push():
@@ -273,8 +300,12 @@ def websock_do_push():
     """
     while True:
         WEBSOCK_DO_PUSH_EVENT.wait()
+        if "push" in WEBSOCK_DO_PUSH_EVENT.get().keys():
+            job = WEBSOCK_DO_PUSH_EVENT.get()["push"]
+            packaged = package_job(job)
+        else:
+            packaged = package_job_detail()
         WEBSOCK_DO_PUSH_EVENT.clear()
-        packaged = package_job_detail()
         for sock in SOCKETS:
             sock.write_message(packaged)
 
