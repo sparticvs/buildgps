@@ -9,7 +9,8 @@ to get current build status.  BuildGPS consists of two parts.  First is a Python
 WebSocket Service that will talk to Jenkins and GitLab JSON APIs (because of Cross-Origin
 Resource Sharing) and feed information to the Second part of the project. The second is an
 extremely light HTML/Javascript Package that gets information back from the server and using
-Bootstrap, it displays the build status for each project that reports on WebSockets.
+Twitter Bootstrap and Angular.JS, it displays the build status for each project that reports
+on WebSockets.
 
 Why make BuildGPS?
 ------------------
