@@ -19,6 +19,15 @@ I know that other "dashboards" for Jenkins exist.  The problem is that most of t
 (sorry, but it's true). Since I wanted a useful one that was also light-weight, this was the
 perfect solution I could develop.
 
+Why a new version number?
+-------------------------
+
+Great question. I learned about Angular.JS after a working version of this was
+done. I know that the change will eliminate some bugs before they are
+discovered because the code is easier to work with and read. This gets its own
+version number because I think that this work needs to be differentiated in
+some manner.
+
 License
 --------
 
