@@ -319,6 +319,9 @@ class MainHandler(WebSocketHandler):
         with SOCKETS_LOCK:
             SOCKETS.append(self)
 
+    def check_origin(self, origin):
+        return True
+
     def on_message(self, message):
         self.write_message("Server Ignores Data from Client")
 
